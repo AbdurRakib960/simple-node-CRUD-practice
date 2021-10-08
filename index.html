@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stuff record</title>
+</head>
+
+<body>
+    <div id="stuff-container">
+        <h1>Stuff Information</h1>
+        <form action="/addStuff" method="post">
+            <label for="name">Name</label>
+            <br>
+            <input type="text" name="name" id="name">
+            <br>
+            <label for="email">Email</label>
+            <br>
+            <input type="email" name="email" id="email">
+            <br>
+            <label for="job">Post</label>
+            <br>
+            <input type="text" name="job" id="job">
+            <br>
+            <input type="submit" value="Add stuff">
+        </form>
+    </div>
+
+    <div id="display-stuff"></div>
+    <div id="textShow"></div>
+
+    <div id="update"></div>
+
+    <script>
+        // Load data from database
+        function loadAllData() {
+            fetch('/stuffs')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                       
+                        
+                        console.log('nothing is here')
+                        const containerDiv = document.getElementById('textShow');
+                        const text = document.createElement('h3');
+                        text.innerText = 'Nothing to display ! Please add information'
+                        containerDiv.appendChild(text);
+                    }
+                    const container = document.getElementById('display-stuff');
+                    container.innerHTML = ''
+                    data.forEach(stuff => {
+                        const item = document.createElement('p');
+                        item.innerHTML = `<b>Name:</b> ${stuff.name} - <b>Email:</b> ${stuff.email} - <b>Job:</b> ${stuff.post}
+                        <button onclick="handleDelete(event,'${stuff._id}')">Delete</button>
+                        <button onclick="loadSingleInfo('${stuff._id}')">Update</button>
+                        `
+                        container.appendChild(item);
+                    })
+                })
+        }
+        loadAllData();
+        // handle delete button
+        function handleDelete(event, id) {
+            
+            fetch(`/delete/${id}`, {
+                method: 'DELETE'
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result) {
+                        event.target.parentNode.style.display = 'none';
+                    }
+                })
+
+
+        }
+
+        function loadSingleInfo(id) {
+            fetch(`/loadSinglePerson/${id}`)
+                .then(res => res.json())
+                .then(result => {
+                    const update = document.getElementById('update');
+                    update.innerHTML = `
+                <h4>Update ${result.name} information</h4>
+                Name: <input type="text" id="updateName" value="${result.name}"  />
+                Email: <input type="email" id="updateEmail" value="${result.email}"  />
+                Job: <input type="text" id="updateJob" value="${result.post}"  />
+                <br>
+                <br>
+                <button onclick="updateChange('${result._id}')">Update</button>
+                `
+
+                })
+        }
+        // update stuff information
+        function updateChange(id) {
+            const updateName = document.getElementById('updateName').value;
+            const updateEmail = document.getElementById('updateEmail').value;
+            const updateJob = document.getElementById('updateJob').value;
+            const updateInformation = { id, updateJob, updateName, updateEmail }
+
+            // update 
+            fetch(`/update/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(updateInformation),
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8',
+                },
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result) {
+                        loadAllData()
+                        document.getElementById('update').innerHTML = ''
+                    }
+                })
+        }
+    </script>
+</body>
+
+</html>
